@@ -1,21 +1,12 @@
-import os
 from typing import AsyncGenerator
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("Переменная окружения DATABASE_URL не задана")
-
-if DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+from config import settings
 
 engine = create_async_engine(
-    DATABASE_URL, 
-    echo=True,
+    settings.DATABASE_URL, 
+    echo=False,
     pool_pre_ping=True,
     future=True
 )

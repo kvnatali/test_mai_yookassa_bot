@@ -1,22 +1,18 @@
-import os
 import asyncio
+import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.client.session.aiohttp import AiohttpSession
-# from aiohttp_proxy import ProxyConnector
-from dotenv import load_dotenv
 
 from database import async_session_maker
 from payment_service import PaymentService
-from aiohttp_socks import ProxyConnector 
+from config import settings
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
-TOKEN = os.getenv("TG_BOT_TOKEN")
-SUBSCRIPTION_PRICE = 500  
+SUBSCRIPTION_PRICE = 550  
 
-bot = Bot(token=TOKEN)
+bot = Bot(token=settings.TG_BOT_TOKEN)
 dp = Dispatcher()
 
 @dp.message(CommandStart())
@@ -25,13 +21,16 @@ async def commandStartHandler(message: types.Message):
     
     async with async_session_maker() as db_session:
         try:
-            print("kus1")
+            logger.info(f"Старт обработки команды /start для пользователя {telegram_id}")
+            
             confirmation_url = await PaymentService.firstPayment(
                 session=db_session,
                 telegramId=telegram_id,
                 amount=SUBSCRIPTION_PRICE
             )
-            print(f"kus2 confirmation_url: {confirmation_url}")
+            
+            logger.info(f"Ссылка успешно создана. confirmation_url: {confirmation_url}")
+            
             builder = InlineKeyboardBuilder()
             builder.button(
                 text=f"Оплатить {SUBSCRIPTION_PRICE} ₽", 
@@ -40,17 +39,17 @@ async def commandStartHandler(message: types.Message):
             
             text = (
                 f"Привет, {message.from_user.first_name}!\n\n"
-                f"Сейчас спишется {SUBSCRIPTION_PRICE} "
+                f"Сейчас спишется {SUBSCRIPTION_PRICE} ₽ для регистрации подписки."
             )
             
             await message.answer(text=text, reply_markup=builder.as_markup())
             
         except Exception as e:
-            print(f"Ошибка у пользователя {telegram_id}: {e}")
-            await message.answer("Не получилось создать ссылку для оплаты")
+            logger.error(f"Ошибка при создании платежа для пользователя {telegram_id}: {e}", exc_info=True)
+            await message.answer("Не получилось создать ссылку для оплаты. Попробуйте позже.")
 
 async def startBot():
-    print("Бот работает")
+    logger.info("Бот запущен")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

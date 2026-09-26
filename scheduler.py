@@ -6,9 +6,11 @@ from yookassa import Payment as YooPayment
 from database import async_session_maker
 from models import User, Payment
 from notifications import sendPaymentNotification
+import logging
+from config import settings
 
 MAX_RETRY_ATTEMPTS = 3
-SUBSCRIPTION_PRICE = 500
+SUBSCRIPTION_PRICE = 550
 
 async def checkAndRunRecurrentPayments():
     async with async_session_maker() as session:

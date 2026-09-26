@@ -1,4 +1,3 @@
-import os
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
@@ -12,15 +11,21 @@ from models import Payment, User
 from scheduler import checkAndRunRecurrentPayments, handlePaymentFailure
 from notifications import sendPaymentNotification 
 
+from yookassa import Configuration
+from config import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = AsyncIOScheduler()
     scheduler.add_job(checkAndRunRecurrentPayments, 'interval', hours=1)
     scheduler.start()
-    print("планировщик запущен")
+    logger.debug("планировщик запущен")
     yield
     scheduler.shutdown()
-    print("планировщик остановлен")
+    logger.debug("планировщик остановлен")
 
 app = FastAPI(title="YooKassa Billing System", lifespan=lifespan)
 

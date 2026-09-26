@@ -1,16 +1,12 @@
-import os
+import logging
 from aiogram import Bot
-from dotenv import load_dotenv
+from config import settings 
 
-load_dotenv()
-
-TOKEN = os.getenv("TG_BOT_TOKEN")
-CHAT_ID = os.getenv("TG_CHAT_ID")
+logger = logging.getLogger(__name__)
 
 async def sendPaymentNotification(status: str, amount: str, userId: str, reason: str = None):
-    if not TOKEN or not CHAT_ID:
-        print(f"TOKEN or CHAT_ID error Status={status}, Amount={amount}, User={userId}, Reason={reason}")
-        return
+    token = settings.TG_BOT_TOKEN
+    chat_id = settings.TG_CHAT_ID
 
     friendly_reason = reason
     if reason == "insufficient_funds":
@@ -30,7 +26,7 @@ async def sendPaymentNotification(status: str, amount: str, userId: str, reason:
         )
 
     try:
-        async with Bot(token=TOKEN) as bot:
-            await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown")
+        async with Bot(token=token) as bot:
+            await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
     except Exception as e:
-        print(f"Ошибка уведомления в Telegram: {e}")
+        logger.error(f"Ошибка: {e}", exc_info=True)
